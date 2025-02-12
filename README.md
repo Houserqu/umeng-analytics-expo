@@ -1,132 +1,35 @@
-# @react-native-hero/umeng-analytics
+本库是基于 [@react-native-hero/umeng-analytics](https://github.com/react-native-hero/umeng-analytics) fork 而来，主要针对 expo 框架进行了适配，提供了 expo 插件配置原生代码，并添加了 typescript 声明文件。非 expo 开发模式请使用原库。
 
 ## Getting started
 
 Install the library using either Yarn:
 
 ```
-yarn add @react-native-hero/umeng-analytics
+yarn add expo-umeng-analytics
 ```
 
 or npm:
 
 ```
-npm install --save @react-native-hero/umeng-analytics
-```
-
-## Link
-
-- React Native v0.60+
-
-For iOS, use `cocoapods` to link the package.
-
-run the following command:
-
-```
-$ cd ios && pod install
-```
-
-For android, the package will be linked automatically on build.
-
-- React Native <= 0.59
-
-run the following command to link the package:
-
-```
-$ react-native link @react-native-hero/umeng-analytics
+npm install --save expo-umeng-analytics
 ```
 
 ## Setup
 
-![image](https://user-images.githubusercontent.com/2732303/77606227-ded8b680-6f51-11ea-9aa4-0378e79deaa7.png)
-
-打开应用信息页面，安卓推送有 `Appkey` 和 `Umeng Message Secret` 两个字段，iOS 只有 `Appkey` 字段，后面将用这些字段初始化友盟。
-
-### iOS
-
-修改 `AppDelegate.m`，如下
-
-```oc
-#import <RNTUmengAnalytics.h>
-
-- (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions
-{
-  ...
-  // 初始化友盟基础库
-  // channel 一般填 App Store，如果有测试环境，可按需填写
-  // debug 表示是否打印调试信息
-  [RNTUmengAnalytics init:@"appKey" channel:@"App Store" debug:false];
-  return YES;
-}
-```
-
-### Android
-
-修改 `android/build.gradle`，如下：
-
-```
-allprojects {
-    repositories {
-        // 确保添加了友盟仓库
-        maven { url 'https://repo1.maven.org/maven2/' }
-    }
-}
-```
-
-`android/app/build.gradle` 根据不同的包填写不同的配置，如下：
-
-```
-buildTypes {
-    debug {
-        manifestPlaceholders = [
-            UMENG_APP_KEY: '',
-            UMENG_PUSH_SECRET: '',
-            UMENG_CHANNEL: '',
-        ]
-    }
-    release {
-        manifestPlaceholders = [
-            UMENG_APP_KEY: '',
-            UMENG_PUSH_SECRET: '',
-            UMENG_CHANNEL: '',
-        ]
-    }
-}
-```
-
-在 `MainApplication` 的 `onCreate` 方法进行初始化，如下：
-
-Kotlin 版本
-
-```kotlin
-override fun onCreate() {
-    val metaData = packageManager.getApplicationInfo(packageName, PackageManager.GET_META_DATA).metaData
-
-    // 初始化友盟基础库
-    // 第三个参数表示是否显示调试信息
-    RNTUmengAnalyticsModule.init(this, metaData, false)
-}
-```
-
-Java 版本
-
-```java
-// onCreate 方法体换成下面这段
-Bundle metaData  = this.getPackageManager().getApplicationInfo(
-  this.getPackageName(), PackageManager.GET_META_DATA
-).metaData;
-RNTUmengAnalyticsModule.init(this, metaData, false);
-```
-
-### 配置混淆规则
-
-在 `android/app/proguard-rules.pro` 添加以下混淆规则，注意替换自己的包名，并且删掉 `[` 和 `]`。
-
-```
--keep public class [您的应用包名].R$*{
-public static final int *;
-}
-```
+1. 先获取友盟平台的 appKey
+2. 在 app.json 中配置插件和 appKey
+   ```
+   "plugins": [
+      [
+        "expo-umeng-analytics",
+        {
+          "androidAppKey": "你的 android appkey",
+          "iosAppKey": "你的 ios appkey",
+          "channel": "你的 channel"
+        }
+      ]
+   ]
+   ```
 
 ## Usage
 

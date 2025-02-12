@@ -23,23 +23,20 @@ import kotlin.collections.HashMap
 class RNTUmengAnalyticsModule(private val reactContext: ReactApplicationContext) : ReactContextBaseJavaModule(reactContext), LifecycleEventListener {
 
     companion object {
-
         private var appKey = ""
         private var pushSecret = ""
         private var channel = ""
 
         // 初始化友盟基础库
-        @JvmStatic fun init(app: Application, metaData: Bundle, debug: Boolean) {
-
-            appKey = metaData.getString("UMENG_APP_KEY", "").trim()
-            pushSecret = metaData.getString("UMENG_PUSH_SECRET", "").trim()
-            channel = metaData.getString("UMENG_CHANNEL", "").trim()
+        @JvmStatic
+        fun init(app: Application, umengAppKey: String, umengPushSecret: String, umengChannel: String, debug: Boolean) {
+            appKey = umengAppKey
+            pushSecret = umengPushSecret
+            channel = umengChannel
 
             UMConfigure.setLogEnabled(debug)
             UMConfigure.preInit(app, appKey, channel)
-
         }
-
     }
 
     init {
@@ -53,18 +50,13 @@ class RNTUmengAnalyticsModule(private val reactContext: ReactApplicationContext)
     }
 
     override fun getConstants(): Map<String, Any>? {
-
         val constants: MutableMap<String, Any> = HashMap()
-
         constants["CHANNEL"] = channel
-
         return constants
-
     }
 
     @ReactMethod
     fun init(promise: Promise) {
-
         UMConfigure.submitPolicyGrantResult(reactContext, true)
         UMConfigure.init(reactContext, appKey, channel, UMConfigure.DEVICE_TYPE_PHONE, pushSecret)
 
@@ -74,12 +66,10 @@ class RNTUmengAnalyticsModule(private val reactContext: ReactApplicationContext)
         isReady = true
 
         promise.resolve(Arguments.createMap())
-
     }
 
     @ReactMethod
     fun getDeviceInfo(promise: Promise) {
-
         if (!checkReady(promise)) {
             return
         }
@@ -90,18 +80,16 @@ class RNTUmengAnalyticsModule(private val reactContext: ReactApplicationContext)
                 Executors.newSingleThreadScheduledExecutor().schedule({
                     tryDeviceInfo()
                 }, 50, TimeUnit.MILLISECONDS)
-            }
-            else {
+            } else {
                 promise.resolve(map)
             }
         }
-        tryDeviceInfo()
 
+        tryDeviceInfo()
     }
 
     @ReactMethod
     fun getUserAgent(promise: Promise) {
-
         if (!checkReady(promise)) {
             return
         }
@@ -115,19 +103,16 @@ class RNTUmengAnalyticsModule(private val reactContext: ReactApplicationContext)
             val userAgent = System.getProperty("http.agent")
             if (userAgent != null && userAgent.isNotEmpty()) {
                 map.putString("userAgent", userAgent)
-            }
-            else {
+            } else {
                 map.putString("error", e.localizedMessage)
             }
         }
 
         promise.resolve(map)
-
     }
 
     @ReactMethod
     fun getPhoneNumber(promise: Promise) {
-
         if (!checkReady(promise)) {
             return
         }
@@ -152,18 +137,19 @@ class RNTUmengAnalyticsModule(private val reactContext: ReactApplicationContext)
         if (hasPermission) {
             try {
                 val manager = reactContext.getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager
-                map.putString("phoneNumber", manager.line1Number)
-            }
-            catch (e: Exception) {
+                if (ActivityCompat.checkSelfPermission(reactContext, Manifest.permission.READ_PHONE_STATE) == PackageManager.PERMISSION_GRANTED) {
+                    map.putString("phoneNumber", manager.line1Number)
+                } else {
+                    map.putString("error", "Permission not granted")
+                }
+            } catch (e: Exception) {
                 map.putString("error", e.localizedMessage)
             }
-        }
-        else {
+        } else {
             map.putString("error", "no permission")
         }
 
         promise.resolve(map)
-
     }
 
     @ReactMethod
@@ -173,7 +159,6 @@ class RNTUmengAnalyticsModule(private val reactContext: ReactApplicationContext)
 
     @ReactMethod
     fun signIn(name: String, provider: String?) {
-
         if (!checkReady(null)) {
             return
         }
@@ -181,8 +166,7 @@ class RNTUmengAnalyticsModule(private val reactContext: ReactApplicationContext)
         val hasProvider = provider?.isNotEmpty() ?: false
         if (hasProvider) {
             MobclickAgent.onProfileSignIn(provider, name)
-        }
-        else {
+        } else {
             MobclickAgent.onProfileSignIn(name)
         }
     }
@@ -278,9 +262,9 @@ class RNTUmengAnalyticsModule(private val reactContext: ReactApplicationContext)
         val bundleId = DeviceConfig.getPackageName(reactContext)
 
         val map = Arguments.createMap()
-        map.putString("deviceId", deviceId.toLowerCase(Locale.ROOT))
-        map.putString("deviceType", deviceType.toLowerCase(Locale.ROOT))
-        map.putString("brand", brand.toLowerCase(Locale.ROOT))
+        map.putString("deviceId", deviceId.lowercase(Locale.ROOT)) // 使用 lowercase()
+        map.putString("deviceType", deviceType.lowercase(Locale.ROOT))
+        map.putString("brand", brand.lowercase(Locale.ROOT))
         map.putString("bundleId", bundleId)
 
         return map
@@ -315,5 +299,6 @@ class RNTUmengAnalyticsModule(private val reactContext: ReactApplicationContext)
     override fun onHostDestroy() {
 
     }
-
 }
+
+       
