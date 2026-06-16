@@ -20,27 +20,39 @@ import java.util.concurrent.TimeUnit
 import kotlin.collections.HashMap
 
 
-class RNTUmengAnalyticsModule(private val reactContext: ReactApplicationContext) : ReactContextBaseJavaModule(reactContext), LifecycleEventListener {
+class RNTUmengAnalyticsModule(private val reactContext: ReactApplicationContext) : ReactContextBaseJavaModule(reactContext) {
 
     companion object {
         private var appKey = ""
         private var pushSecret = ""
         private var channel = ""
 
-        // 初始化友盟基础库
+        // 在 Application.onCreate 中调用：预初始化友盟基础库（不采集设备信息、不上报数据）
+        // 真正的初始化在用户同意隐私政策后，由 JS 调用 init() 完成
         @JvmStatic
-        fun init(app: Application, umengAppKey: String, umengPushSecret: String, umengChannel: String, debug: Boolean) {
+        fun preInit(app: Application, umengAppKey: String, umengPushSecret: String, umengChannel: String, debug: Boolean) {
             appKey = umengAppKey
             pushSecret = umengPushSecret
             channel = umengChannel
 
+            // 标记当前为 react-native 封装，和官方 flutter 插件保持一致
+            setWraperType()
+
             UMConfigure.setLogEnabled(debug)
             UMConfigure.preInit(app, appKey, channel)
         }
-    }
 
-    init {
-        reactContext.addLifecycleEventListener(this)
+        // 通过反射设置 wraper 类型（官方各端封装库都会调用此私有接口）
+        private fun setWraperType() {
+            try {
+                val config = Class.forName("com.umeng.commonsdk.UMConfigure")
+                val method = config.getDeclaredMethod("setWraperType", String::class.java, String::class.java)
+                method.isAccessible = true
+                method.invoke(null, "react-native", "1.0")
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
     }
 
     private var isReady = false
@@ -288,17 +300,10 @@ class RNTUmengAnalyticsModule(private val reactContext: ReactApplicationContext)
         return uuid
     }
 
-    override fun onHostResume() {
-        MobclickAgent.onResume(reactContext.currentActivity)
-    }
-
-    override fun onHostPause() {
-        MobclickAgent.onPause(reactContext.currentActivity)
-    }
-
-    override fun onHostDestroy() {
-
-    }
+    // 说明：新版友盟 common SDK 会在初始化时自动注册 ActivityLifecycleCallbacks 来统计会话/时长，
+    // 不再需要手动调用 MobclickAgent.onResume / onPause。
+    // 旧实现里手动调用这一套会和「手动页面采集模式(MANUAL)」冲突，导致 enterPage/leavePage 的
+    // 页面数据无法正确归集上报，因此这里予以移除，与官方 flutter 插件保持一致。
 }
 
        

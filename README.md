@@ -25,11 +25,13 @@ npm install --save expo-umeng-analytics
         {
           "androidAppKey": "你的 android appkey",
           "iosAppKey": "你的 ios appkey",
-          "channel": "你的 channel"
+          "channel": "你的 channel",
+          "debug": false
         }
       ]
    ]
    ```
+   > `debug` 可选，默认 `false`。设为 `true` 后友盟 SDK 会打开日志，可在 logcat 中过滤 `UMLog` 标签排查上报问题。
 
 ## Usage
 
@@ -50,7 +52,7 @@ import {
   sendEventLabel,
   sendEventData,
   sendEventCounter,
-} from '@react-native-hero/umeng-analytics'
+} from 'expo-umeng-analytics'
 
 // 对于安卓来说，需要等用户同意隐私政策后，再调用 init，js 的 init 才是真正的初始化
 // https://developer.umeng.com/docs/119267/detail/182050
@@ -87,8 +89,9 @@ signIn('userId')
 signIn('userId', 'provider')
 signOut()
 
-// 页面统计，注意要配对调用
-// 不能连续调用 enterPage，也不能连续调用 leavePage
+// 页面统计，注意要配对调用（底层对应友盟 onPageStart / onPageEnd）
+// 库内部已自动处理页面重叠（进入新页时会自动结束上一个未关闭的页面）
+// 注意：页面统计需在友盟后台「应用设置 - 页面访问」中开启后才会展示数据
 enterPage('pageName')
 leavePage('pageName')
 

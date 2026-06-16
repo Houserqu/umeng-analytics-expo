@@ -1,6 +1,6 @@
 {
   "name": "expo-umeng-analytics",
-  "version": "0.6.0",
+  "version": "1.0.0",
   "description": "react native umeng analytics",
   "main": "index.js",
   "scripts": {
@@ -8,7 +8,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/react-native-hero/umeng-analytics.git"
+    "url": "git+https://github.com/Houserqu/umeng-analytics-expo"
   },
   "keywords": [
     "react",

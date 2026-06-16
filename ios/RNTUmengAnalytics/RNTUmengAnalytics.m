@@ -4,21 +4,13 @@
 #import <UMCommon/MobClick.h>
 #import <WebKit/WebKit.h>
 
-@implementation RNTUmengAnalytics
-
-static NSString *CHANNEL = @"";
-
-+ (void)init:(NSString *)appKey channel:(NSString *)channel debug:(BOOL)debug {
-
-    CHANNEL = channel;
-    
-    [UMConfigure initWithAppkey:appKey channel:channel];
-    [UMConfigure setLogEnabled:debug];
-
-    // 手动采集
-    [MobClick setAutoPageEnabled:NO];
-    
+// 从 Info.plist 读取配置（由 expo config plugin 写入），避免依赖脆弱的 AppDelegate 代码注入
+static NSString *UmengConfigString(NSString *key) {
+    NSString *value = [[NSBundle mainBundle] objectForInfoDictionaryKey:key];
+    return value ?: @"";
 }
+
+@implementation RNTUmengAnalytics
 
 + (BOOL)requiresMainQueueSetup {
     return YES;
@@ -30,16 +22,29 @@ static NSString *CHANNEL = @"";
 
 - (NSDictionary *)constantsToExport {
     return @{
-        @"CHANNEL": CHANNEL,
+        @"CHANNEL": UmengConfigString(@"UmengChannel"),
     };
 }
 
 RCT_EXPORT_MODULE(RNTUmengAnalytics);
 
+// 等用户同意隐私政策后，由 JS 调用，真正初始化友盟 SDK（与 Android 流程对称，符合合规要求）
 RCT_EXPORT_METHOD(init:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRejectBlock)reject) {
 
-    resolve(@{});
-    
+    dispatch_async(dispatch_get_main_queue(), ^{
+        NSString *appKey = UmengConfigString(@"UmengAppKey");
+        NSString *channel = UmengConfigString(@"UmengChannel");
+        BOOL debug = [[[NSBundle mainBundle] objectForInfoDictionaryKey:@"UmengDebug"] boolValue];
+
+        [UMConfigure setLogEnabled:debug];
+        [UMConfigure initWithAppkey:appKey channel:channel];
+
+        // 手动采集页面（对应 Android 的 setPageCollectionMode(MANUAL)）
+        [MobClick setAutoPageEnabled:NO];
+
+        resolve(@{});
+    });
+
 }
 
 // 获得设备信息，用于集成测试

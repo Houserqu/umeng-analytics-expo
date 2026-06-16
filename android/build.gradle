@@ -1,6 +1,6 @@
 buildscript {
     // Buildscript is evaluated before everything else so we can't use safeExtGet
-    def kotlinVersion = rootProject.ext.has('kotlinVersion') ? rootProject.ext.get('kotlinVersion') : '1.7.20'
+    def kotlinVersion = rootProject.ext.has('kotlinVersion') ? rootProject.ext.get('kotlinVersion') : '1.8.10'
 
     repositories {
         mavenCentral()
@@ -17,14 +17,17 @@ def safeExtGet(prop, fallback) {
 }
 
 apply plugin: 'com.android.library'
+apply plugin: 'kotlin-android'
 
 android {
-    compileSdkVersion safeExtGet('compileSdkVersion', 28)
-    buildToolsVersion safeExtGet('buildToolsVersion', '28.0.3')
+    compileSdkVersion safeExtGet('compileSdkVersion', 34)
+
+    // AGP 8+（新版 Expo）要求显式声明 namespace，否则构建失败
+    namespace "com.github.reactnativehero.umenganalytics"
 
     defaultConfig {
-        minSdkVersion safeExtGet('minSdkVersion', 16)
-        targetSdkVersion safeExtGet('targetSdkVersion', 28)
+        minSdkVersion safeExtGet('minSdkVersion', 21)
+        targetSdkVersion safeExtGet('targetSdkVersion', 34)
         versionCode 1
         versionName "1.0"
         consumerProguardFiles 'proguard-rules.pro'
@@ -34,12 +37,18 @@ android {
     }
 }
 
+repositories {
+    mavenCentral()
+    google()
+    // 友盟 SDK 仓库
+    maven { url 'https://repo1.maven.org/maven2/' }
+}
+
 dependencies {
     implementation "com.facebook.react:react-native:${safeExtGet('reactNativeVersion', '+')}"
-    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:${safeExtGet('kotlinVersion', '1.7.20')}"
+    implementation "org.jetbrains.kotlin:kotlin-stdlib:${safeExtGet('kotlinVersion', '1.8.10')}"
 
+    // 友盟统计基础库：common 必选、asms 必选
     api "com.umeng.umsdk:common:+"
     api "com.umeng.umsdk:asms:+"
 }
-
-apply plugin: 'kotlin-android'
